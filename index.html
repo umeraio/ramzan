@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UK Smart Timetable for Sahoor and Iftar</title>
+<style>
+  :root {
+    --bg:#f4f4f4;
+    --card:#ffffff;
+    --teal:#0f3d3e;
+    --teal2:#0b2f30;
+    --gold:#D4AF37;
+    --text:#1f2937;
+    --muted:#6b7280;
+    --line:#e5e7eb;
+    --danger:#d9534f;
+    --shadow: 0 10px 24px rgba(0,0,0,.08);
+    --translit-red:#b91c1c;
+    --translation-readable:#111827;
+  }
+
+  * { box-sizing:border-box; }
+  body {
+    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    background:var(--bg);
+    margin:0;
+    padding:10px; /* Reduced for mobile */
+    color:var(--text);
+    display:flex;
+    justify-content:center;
+  }
+
+  .container {
+    width:100%;
+    max-width:1100px;
+    background:var(--card);
+    border:2px solid var(--gold);
+    border-radius:12px;
+    overflow:hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .header {
+    background: linear-gradient(135deg, var(--teal), #0f4f50);
+    color:var(--gold);
+    text-align:center;
+    padding:22px 15px;
+    border-bottom:6px solid var(--gold);
+  }
+  .header h1 {
+    margin:0;
+    font-size:1.5em; /* Adjusted for mobile */
+    text-transform:uppercase;
+    letter-spacing:.5px;
+  }
+  .header p {
+    margin:8px 0 0 0;
+    color:#fff;
+    opacity:.9;
+    font-size:.9em;
+    line-height:1.35;
+  }
+
+  .controls {
+    background:#f3f4f6;
+    padding:15px;
+    border-bottom:1px solid var(--line);
+  }
+
+  .grid {
+    display:grid;
+    grid-template-columns: 1fr; /* Default to stack for mobile */
+    gap:12px;
+    max-width:1020px;
+    margin:0 auto;
+  }
+
+  @media (min-width: 768px) {
+    .grid { grid-template-columns: 1.2fr 0.9fr 0.9fr; }
+    .header h1 { font-size: 1.9em; }
+    body { padding: 20px; }
+  }
+
+  .field {
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px;
+  }
+  .field label {
+    display:block;
+    font-size:.88em;
+    color:#111827;
+    margin-bottom:8px;
+    font-weight:1000;
+  }
+
+  input[type="text"], input[type="date"], input[type="number"] {
+    width:100%;
+    padding:11px 10px;
+    font-size:16px; /* 16px prevents iOS zoom on focus */
+    border:2px solid var(--teal);
+    border-radius:10px;
+    outline:none;
+  }
+  input[type="text"] { text-transform:uppercase; }
+
+  .subhint {
+    margin-top:8px;
+    font-size:.86em;
+    color:var(--muted);
+    line-height:1.35;
+  }
+
+  .toggleRow {
+    max-width:1020px;
+    margin:12px auto 0 auto;
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    align-items:stretch;
+  }
+
+  .toggleCard {
+    flex: 1 1 100%; /* Full width on mobile */
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px;
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+  }
+  
+  @media (min-width: 600px) {
+    .toggleCard { flex: 1 1 520px; }
+  }
+
+  .toggleLeft {
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+  }
+  .toggleCard input {
+    transform:scale(1.15);
+    margin-top:3px;
+  }
+  .toggleTitle {
+    font-weight:1000;
+    color:#111827;
+    margin:0;
+    line-height:1.25;
+  }
+  .toggleDesc {
+    margin:6px 0 0 0;
+    color:var(--muted);
+    font-size:.9em;
+    line-height:1.35;
+  }
+
+  .pill {
+    display:inline-block;
+    padding:4px 10px;
+    border-radius:999px;
+    background:var(--teal);
+    color:#fff;
+    font-size:.78em;
+    font-weight:1000;
+    white-space:nowrap;
+    align-self:flex-start;
+  }
+
+  .actions {
+    max-width:1020px;
+    margin:12px auto 0 auto;
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+  button {
+    padding:11px 18px;
+    font-size:15px;
+    background:var(--gold);
+    color:var(--teal);
+    border:none;
+    cursor:pointer;
+    font-weight:1000;
+    border-radius:10px;
+    flex: 1 1 140px; /* Buttons grow on mobile */
+  }
+  button:hover { background:#b5952f; }
+
+  .secondary {
+    background:var(--teal);
+    color:#fff;
+    font-weight:900;
+  }
+  .secondary:hover { background:var(--teal2); }
+
+  #status {
+    max-width:1020px;
+    margin:12px auto 0 auto;
+    font-weight:1000;
+    min-height:24px;
+    padding:10px 12px;
+    border-radius:12px;
+    background:#fff;
+    border:1px solid var(--line);
+    color:var(--teal);
+    font-size: 0.9em;
+  }
+
+  .manualWrap {
+    display:none;
+    max-width:1020px;
+    margin:12px auto 0 auto;
+    padding:12px;
+    border-radius:12px;
+    border:1px dashed #9ca3af;
+    background:#fafafa;
+  }
+  .manualHead {
+    display:flex;
+    flex-direction: column;
+    gap:5px;
+    margin-bottom:10px;
+  }
+  
+  @media (min-width: 600px) {
+    .manualHead { flex-direction: row; justify-content:space-between; align-items:center; }
+  }
+
+  .manualHead .title {
+    font-weight:1000;
+    color:#111827;
+  }
+  .manualGrid {
+    display:grid;
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+  
+  @media (min-width: 600px) {
+    .manualGrid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* Table Mobile Optimization */
+  .tableWrap {
+    padding:10px;
+    background:#fff;
+    overflow-x: auto; /* Enables horizontal scroll for mobile */
+    -webkit-overflow-scrolling: touch;
+  }
+  table { 
+    width:100%; 
+    border-collapse:collapse; 
+    text-align:center; 
+    border-radius:12px; 
+    min-width: 500px; /* Ensures table doesn't squish too much */
+  }
+  th {
+    background:var(--gold);
+    color:var(--teal);
+    padding:12px 8px;
+    font-size:.85em;
+  }
+  td {
+    padding:12px 8px;
+    border-bottom:1px solid var(--line);
+    font-size:.9em;
+  }
+  tr:nth-child(even) { background:#f9fafb; }
+
+  td:nth-child(5), td:nth-child(6) {
+    font-weight:1000;
+    color:var(--teal);
+    background: rgba(212,175,55,.10);
+  }
+
+  .bottom {
+    background:#f8fafc;
+    border-top:1px solid var(--line);
+    padding:15px;
+  }
+  .bottomInner {
+    max-width:1020px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:14px;
+  }
+  
+  @media (min-width: 900px) {
+    .bottomInner { grid-template-columns: 1fr 1fr; }
+  }
+
+  .card {
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:14px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.05);
+  }
+  .card h2 {
+    margin:0 0 10px 0;
+    font-size:1.12em;
+    color:#111827;
+  }
+  .card p {
+    margin:8px 0;
+    color:#374151;
+    line-height:1.45;
+  }
+  .divider {
+    height:1px;
+    background:var(--line);
+    margin:12px 0;
+  }
+
+  .duaBox {
+    border:2px solid var(--gold);
+    border-radius:14px;
+    padding:12px;
+    background: linear-gradient(180deg, #ffffff, #fffdf6);
+    margin-top:10px;
+  }
+  .duaTitle {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:8px;
+  }
+  .duaTitle span {
+    font-weight:1000;
+    color:var(--teal);
+    font-size:0.95em;
+  }
+
+  .tag {
+    background:var(--teal);
+    color:#fff;
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:.7em;
+    font-weight:1000;
+    white-space:nowrap;
+  }
+
+  .arabic {
+    direction:rtl;
+    text-align:right;
+    font-size:1.15em;
+    font-weight:1000;
+    color:#111827;
+    line-height:1.55;
+    padding:8px 10px;
+    border-radius:12px;
+    background:#ffffff;
+    border:1px solid var(--line);
+  }
+
+  .latin {
+    font-weight:1000;
+    color:var(--translit-red);
+    margin-top:10px;
+    font-size: 0.9em;
+  }
+
+  .translation {
+    font-weight:1000;
+    color:var(--translation-readable);
+    margin-top:8px;
+    font-size:0.95em;
+    line-height:1.45;
+  }
+
+  .footer {
+    padding:15px;
+    text-align:center;
+    color:#6b7280;
+    font-size:.85em;
+    border-top:1px solid var(--line);
+    background:#fff;
+  }
+</style>
+</head>
+
+<body>
+<div class="container">
+  <div class="header">
+    <h1>UK Smart Timetable for Sahoor and Iftar</h1>
+    <p>
+      Enter your UK postcode (or manual coordinates) and choose your date range.
+      The system will use Open-Meteo for near-term dates (up to 15 days ahead) and automatically fall back to local solar calculation for longer ranges.
+    </p>
+  </div>
+
+  <div class="controls">
+    <div class="grid">
+      <div class="field">
+        <label for="postcode">UK Postcode</label>
+        <input type="text" id="postcode" placeholder="e.g. M1 1AD" value="M1 1AD" />
+        <div class="subhint">
+          Location lookup uses Postcodes.io (lat/lon). If your network blocks it, use <b>Manual Lat/Lon</b>.
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="startDate">Date From</label>
+        <input type="date" id="startDate" />
+        <div class="subhint">Default is <b>today</b>.</div>
+      </div>
+
+      <div class="field">
+        <label for="endDate">Date To</label>
+        <input type="date" id="endDate" />
+        <div class="subhint">Default is <b>30 days</b> from start.</div>
+      </div>
+    </div>
+
+    <div class="toggleRow">
+      <div class="toggleCard">
+        <div class="toggleLeft">
+          <input type="checkbox" id="useOpenMeteo" checked />
+          <div>
+            <p class="toggleTitle">Use Open-Meteo when available</p>
+          </div>
+        </div>
+        <span class="pill">15-day window</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="btnGenerate">Generate Timetable</button>
+      <button id="btnToggleManual" class="secondary">Manual Lat/Lon</button>
+    </div>
+
+    <div id="manualWrap" class="manualWrap">
+      <div class="manualHead">
+        <div class="title">Manual Coordinates <span class="pill">Fallback</span></div>
+        <div class="subhint">Use if Postcodes.io is blocked.</div>
+      </div>
+      <div class="manualGrid">
+        <div class="field" style="margin:0;">
+          <label for="lat">Latitude (UK approx: 49.9 to 60.9)</label>
+          <input type="number" id="lat" step="0.000001" placeholder="e.g. 53.4808" />
+        </div>
+        <div class="field" style="margin:0;">
+          <label for="lon">Longitude (UK approx: -8.6 to 2.1)</label>
+          <input type="number" id="lon" step="0.000001" placeholder="e.g. -2.2426" />
+        </div>
+      </div>
+    </div>
+
+    <div id="status">Ready.</div>
+  </div>
+
+  <div class="tableWrap">
+    <table id="timeTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Day</th>
+          <th>Date</th>
+          <th>Sunrise</th>
+          <th>Sahoor<br /><small>(Sunrise - 90m)</small></th>
+          <th>Iftar<br /><small>(Sunset + 2m)</small></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="6">Enter a postcode and select dates to begin.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="bottom">
+    <div class="bottomInner">
+      <div class="card">
+        <h2>Prayers for Starting and Breaking the Fast</h2>
+        <div class="duaBox">
+          <div class="duaTitle">
+            <span>1. Prayer for Starting the Fast (Sehri/Suhoor)</span>
+          </div>
+          <div class="arabic" lang="ar">وَبِصَوْمِ غَدٍ نَوَيْتُ مِنْ شَهْرِ رَمَضَانَ</div>
+          <div class="latin">Wa bisawmi ghadinn nawaiytu min shahri Ramadan.</div>
+          <div class="translation">"I intend to fast tomorrow in the holy month of Ramadan."</div>
+        </div>
+        <div class="divider"></div>
+        <div class="duaBox">
+          <div class="duaTitle">
+            <span>2. Prayer for Breaking the Fast (Iftar)</span>
+          </div>
+          <div class="arabic" lang="ar">اللَّهُمَّ إِنِّي لَكَ صُمْتُ وَبِكَ آمَنْتُ وَعَلَيْكَ تَوَكَّلْتُ وَعَلَى رِزْقِكَ أَفْطَرْتُ</div>
+          <div class="latin">Allahumma inni laka sumtu wa bika aamantu wa alayka tawakkaltu wa ala rizq-ika-aftartu.</div>
+          <div class="translation">"O Allah! I fasted for You, I believe in You, I rely on You, and with Your sustenance, I break my fast."</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Three Ashra of Ramadan</h2>
+        <p><b>Ramadan is divided into three 10-day phases (Ashra)</b> focusing on <b>Mercy</b>, <b>Forgiveness</b>, and <b>Salvation</b>.</p>
+        <div class="duaBox">
+          <div class="duaTitle">
+            <span>First 10 Days (Mercy)</span>
+            <span class="tag">Ashra 1</span>
+          </div>
+          <div class="arabic" lang="ar">رَبِّ اغْفِرْ وَارْحَمْ وَأَنْتَ خَيْرُ الرَّاحِمِينَ</div>
+          <div class="latin">Rab-bigh-fir war-ham wa Anta Khair-ur-Raahimeen</div>
+          <div class="translation">My Lord, forgive and have mercy, for You are the Best of Merciful.</div>
+        </div>
+        <div class="duaBox">
+          <div class="duaTitle">
+            <span>Middle 10 Days (Forgiveness)</span>
+            <span class="tag">Ashra 2</span>
+          </div>
+          <div class="arabic" lang="ar">أَسْتَغْفِرُ اللَّهَ رَبِّي مِنْ كُلِّ ذَنْبٍ وَأَتُوبُ إِلَيْهِ</div>
+          <div class="latin">Astaghfirullah rabbi min kulli dhanbin wa atubu ilayh</div>
+          <div class="translation">I seek forgiveness from Allah, my Lord, from every sin and I turn to Him.</div>
+        </div>
+        <div class="duaBox">
+          <div class="duaTitle">
+            <span>Last 10 Days (Salvation)</span>
+            <span class="tag">Ashra 3</span>
+          </div>
+          <div class="arabic" lang="ar">اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي</div>
+          <div class="latin">Allahumma innaka 'afuwwun tuhibbul 'afwa fa'fu 'anni</div>
+          <div class="translation">O Allah, You are Most Forgiving, and You love forgiveness, so forgive me.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Designed by <strong style="color:#111827;">Umer Malik</strong>.
+  </div>
+</div>
+
+<script>
+  // Script remains exactly the same as provided to maintain logic and functionality
+  const tz = "Europe/London";
+  const SAHOOR_OFFSET_MINUTES = 90;
+  const IFTAR_OFFSET_MINUTES  = 3;
+  const OPEN_METEO_MAX_DAYS_AHEAD = 15;
+
+  const startInput = document.getElementById("startDate");
+  const endInput   = document.getElementById("endDate");
+  const useOpenMeteoInput = document.getElementById("useOpenMeteo");
+
+  const todayLocal = new Date();
+  const todayUTC = toUTCDate(todayLocal);
+
+  startInput.value = toISODate(todayLocal);
+  endInput.value = toISODate(fromUTCDate(addDays(todayUTC, 29)));
+
+  startInput.addEventListener("change", () => {
+    const s = parseISODate(startInput.value);
+    const e = parseISODate(endInput.value);
+    if (!s) return;
+    if (!e || e < s) {
+      endInput.value = toISODate(fromUTCDate(addDays(s, 29)));
+    }
+  });
+
+  document.getElementById("btnGenerate").addEventListener("click", generateTimetable);
+  document.getElementById("postcode").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") generateTimetable();
+  });
+
+  const manualWrap = document.getElementById("manualWrap");
+  document.getElementById("btnToggleManual").addEventListener("click", () => {
+    manualWrap.style.display = (manualWrap.style.display === "block") ? "none" : "block";
+  });
+
+  async function generateTimetable() {
+    const postcodeField = document.getElementById("postcode");
+    const statusDiv = document.getElementById("status");
+    const tableBody = document.querySelector("#timeTable tbody");
+    const rawPostcode = postcodeField.value.trim();
+    const postcode = rawPostcode.replace(/\s+/g, "").toUpperCase();
+    const startDateUTC = parseISODate(startInput.value);
+    const endDateUTC   = parseISODate(endInput.value);
+
+    if (!startDateUTC || !endDateUTC) {
+      setStatus(statusDiv, "Please select both Date From and Date To.", true);
+      return;
+    }
+    if (endDateUTC < startDateUTC) {
+      setStatus(statusDiv, "Date To must be the same as or after Date From.", true);
+      return;
+    }
+
+    const daysRequested = diffDaysInclusive(startDateUTC, endDateUTC);
+    if (daysRequested > 120) {
+      setStatus(statusDiv, "Please select a smaller range (max 120 days).", true);
+      return;
+    }
+
+    setStatus(statusDiv, "Resolving location...", false);
+    tableBody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
+
+    let lat = null, lon = null, locationLabel = "";
+
+    try {
+      if (postcode.length >= 5) {
+        const geoUrl = `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`;
+        const geoRes = await fetchWithTimeout(geoUrl, 8000);
+        if (!geoRes.ok) {
+          const text = await safeText(geoRes);
+          throw new Error(`Postcodes.io error (${geoRes.status}): ${text || geoRes.statusText}`);
+        }
+        const geoData = await geoRes.json();
+        if (geoData?.status === 200 && geoData?.result) {
+          lat = geoData.result.latitude;
+          lon = geoData.result.longitude;
+          const area = geoData.result.admin_district || geoData.result.parliamentary_constituency || "UK";
+          locationLabel = `${postcode} (${area})`;
+        } else {
+          throw new Error("Invalid postcode response.");
+        }
+      } else {
+        throw new Error("Postcode too short.");
+      }
+    } catch {
+      const latField = document.getElementById("lat").value;
+      const lonField = document.getElementById("lon").value;
+      const latNum = Number(latField);
+      const lonNum = Number(lonField);
+      if (Number.isFinite(latNum) && Number.isFinite(lonNum)) {
+        lat = latNum;
+        lon = lonNum;
+        locationLabel = `Manual lat/lon (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+      } else {
+        setStatus(statusDiv, "Location failed. Your network may be blocking Postcodes.io. Click 'Manual Lat/Lon' and enter coordinates.", true);
+        tableBody.innerHTML = '<tr><td colspan="6">Location lookup failed</td></tr>';
+        return;
+      }
+    }
+
+    try {
+      tableBody.innerHTML = "";
+      const startISO = startInput.value;
+      const endISO   = endInput.value;
+      const withinWindow = isWithinOpenMeteoWindow(startDateUTC, endDateUTC);
+      let sunSource = "Local calculation (fallback)";
+      let meteoData = null;
+
+      if (useOpenMeteoInput.checked && withinWindow) {
+        setStatus(statusDiv, `Using Open-Meteo for: ${locationLabel}...`, false);
+        meteoData = await tryOpenMeteoSunriseSunset(lat, lon, startISO, endISO);
+        if (meteoData) sunSource = "Open-Meteo";
+      }
+
+      setStatus(statusDiv, `Timetable for: ${locationLabel} | Source: ${sunSource}`, false);
+
+      if (meteoData?.daily?.time?.length) {
+        const dates = meteoData.daily.time;
+        const sunrises = meteoData.daily.sunrise;
+        const sunsets = meteoData.daily.sunset;
+        for (let i = 0; i < dates.length; i++) {
+          const d = parseISODate(dates[i]);
+          const sunriseObj = new Date(sunrises[i]);
+          const sunsetObj  = new Date(sunsets[i]);
+          const sahoor = new Date(sunriseObj.getTime() - SAHOOR_OFFSET_MINUTES * 60 * 1000);
+          const iftar  = new Date(sunsetObj.getTime() + IFTAR_OFFSET_MINUTES * 60 * 1000);
+          tableBody.insertAdjacentHTML("beforeend", `
+            <tr>
+              <td>${i + 1}</td>
+              <td>${formatWeekday(d)}</td>
+              <td>${formatDateShort(d)}</td>
+              <td>${formatTimeInTZ(sunriseObj, tz)}</td>
+              <td>${formatTimeInTZ(sahoor, tz)}</td>
+              <td>${formatTimeInTZ(iftar, tz)}</td>
+            </tr>
+          `);
+        }
+        return;
+      }
+
+      let idx = 1;
+      for (let d = new Date(startDateUTC); d <= endDateUTC; d = addDays(d, 1)) {
+        const y = d.getUTCFullYear();
+        const m = d.getUTCMonth() + 1;
+        const day = d.getUTCDate();
+        const sunriseUTCmins = calcSunriseUTC(y, m, day, lat, lon);
+        const sunsetUTCmins  = calcSunsetUTC(y, m, day, lat, lon);
+        if (sunriseUTCmins == null) continue;
+        const sunriseUTC = dateFromUTCMinutes(y, m, day, sunriseUTCmins);
+        const sunsetUTC  = dateFromUTCMinutes(y, m, day, sunsetUTCmins);
+        const sahoor = new Date(sunriseUTC.getTime() - SAHOOR_OFFSET_MINUTES * 60 * 1000);
+        const iftar  = new Date(sunsetUTC.getTime() + IFTAR_OFFSET_MINUTES * 60 * 1000);
+        tableBody.insertAdjacentHTML("beforeend", `
+          <tr>
+            <td>${idx++}</td>
+            <td>${formatWeekday(d)}</td>
+            <td>${formatDateShort(d)}</td>
+            <td>${formatTimeInTZ(sunriseUTC, tz)}</td>
+            <td>${formatTimeInTZ(sahoor, tz)}</td>
+            <td>${formatTimeInTZ(iftar, tz)}</td>
+          </tr>
+        `);
+      }
+    } catch (e) {
+      setStatus(statusDiv, `Error: ${e.message}`, true);
+    }
+  }
+
+  function setStatus(el, msg, isError){
+    el.textContent = msg;
+    el.style.color = isError ? "#7f1d1d" : "var(--teal)";
+    el.style.background = isError ? "#fff1f2" : "#fff";
+  }
+
+  async function tryOpenMeteoSunriseSunset(lat, lon, startISO, endISO) {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=sunrise,sunset&timezone=Europe%2FLondon&start_date=${startISO}&end_date=${endISO}`;
+    try {
+      const res = await fetchWithTimeout(url, 9000);
+      return res.ok ? await res.json() : null;
+    } catch { return null; }
+  }
+
+  function isWithinOpenMeteoWindow(startUTC, endUTC) {
+    const maxUTC = addDays(toUTCDate(new Date()), OPEN_METEO_MAX_DAYS_AHEAD);
+    return startUTC <= maxUTC && endUTC <= maxUTC;
+  }
+
+  async function fetchWithTimeout(url, ms) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), ms);
+    try { return await fetch(url, { signal: controller.signal }); }
+    finally { clearTimeout(id); }
+  }
+
+  async function safeText(res) { try { return await res.text(); } catch { return ""; } }
+  function formatTimeInTZ(dateObj, timeZone) { return new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hour12: false }).format(dateObj); }
+  function formatWeekday(dateUTC) { return new Intl.DateTimeFormat("en-GB", { timeZone: tz, weekday: "short" }).format(dateUTC); }
+  function formatDateShort(dateUTC) { return new Intl.DateTimeFormat("en-GB", { timeZone: tz, day: "2-digit", month: "short" }).format(dateUTC); }
+  function toISODate(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
+  function toUTCDate(localDate) { return new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate())); }
+  function fromUTCDate(utcDate) { return new Date(utcDate.getUTCFullYear(), utcDate.getUTCMonth(), utcDate.getUTCDate()); }
+  function parseISODate(iso) { if (!iso) return null; const [y, m, d] = iso.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); }
+  function addDays(dateObj, days) { const d = new Date(dateObj.getTime()); d.setUTCDate(d.getUTCDate() + days); return d; }
+  function diffDaysInclusive(s, e) { return Math.floor((e.getTime() - s.getTime()) / 86400000) + 1; }
+  function calcSunriseUTC(y, m, d, lat, lon) { return calcSunUTC(true, y, m, d, lat, lon); }
+  function calcSunsetUTC(y, m, d, lat, lon) { return calcSunUTC(false, y, m, d, lat, lon); }
+  function calcSunUTC(isSunrise, year, month, day, latitude, longitude) {
+    const zenith = 90.833;
+    const N = dayOfYear(year, month, day);
+    const lngHour = longitude / 15;
+    const t = isSunrise ? N + ((6 - lngHour) / 24) : N + ((18 - lngHour) / 24);
+    const M = (0.9856 * t) - 3.289;
+    let L = normalizeDegrees(M + (1.916 * Math.sin(degToRad(M))) + (0.020 * Math.sin(degToRad(2 * M))) + 282.634);
+    let RA = normalizeDegrees(radToDeg(Math.atan(0.91764 * Math.tan(degToRad(L)))));
+    RA = (RA + (Math.floor(L / 90) * 90 - Math.floor(RA / 90) * 90)) / 15;
+    const sinDec = 0.39782 * Math.sin(degToRad(L));
+    const cosDec = Math.cos(Math.asin(sinDec));
+    const cosH = (Math.cos(degToRad(zenith)) - (sinDec * Math.sin(degToRad(latitude)))) / (cosDec * Math.cos(degToRad(latitude)));
+    if (cosH > 1 || cosH < -1) return null;
+    let H = (isSunrise ? 360 - radToDeg(Math.acos(cosH)) : radToDeg(Math.acos(cosH))) / 15;
+    return normalizeHours(H + RA - (0.06571 * t) - 6.622 - lngHour) * 60;
+  }
+  function dateFromUTCMinutes(year, month, day, utcMinutes) { return new Date(Date.UTC(year, month - 1, day, 0, 0, Math.round(utcMinutes * 60))); }
+  function dayOfYear(y, m, d) { return Math.floor((new Date(Date.UTC(y, m - 1, d)) - new Date(Date.UTC(y, 0, 1))) / 86400000) + 1; }
+  function degToRad(deg) { return deg * Math.PI / 180; }
+  function radToDeg(rad) { return rad * 180 / Math.PI; }
+  function normalizeDegrees(deg) { deg %= 360; return deg < 0 ? deg + 360 : deg; }
+  function normalizeHours(h) { h %= 24; return h < 0 ? h + 24 : h; }
+</script>
+</body>
+</html>
